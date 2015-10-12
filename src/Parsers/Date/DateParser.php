@@ -1,0 +1,80 @@
+<?php
+namespace DoctrineMapper\Parsers\Date;
+
+use DateTime;
+use DoctrineMapper\Exception\CantParseException;
+
+/**
+ * Date time auto parser
+ *
+ * @author Pecina Ondřej <pecina.ondrej@gmail.com>
+ * @package DoctrineMapper
+ */
+class DateParser
+{
+	/** @var IDateFormat */
+	private $dateFormat;
+
+	/**
+	 * DateParser constructor.
+	 * @param IDateFormat $dateFormat
+	 */
+	public function __construct(IDateFormat $dateFormat)
+	{
+		$this->dateFormat = $dateFormat;
+	}
+
+	/**
+	 * Parse string date to DateTime object
+	 *
+	 * @param string $date
+	 * @param bool|FALSE $toDate
+	 * @return \DateTime
+	 * @throws CantParseException
+	 */
+	public function parseDateTime($date, $toDate = FALSE) {
+		$value = DateTime::createFromFormat($this->dateFormat->getDateTimeFormat(), $date);
+
+		// if not, try without time
+		if (!$value) {
+			$value = DateTime::createFromFormat($this->dateFormat->getDateFormat(), $date);
+
+			if ($value !== FALSE) {
+				$value->setTime(0,0,0);
+			}
+		}
+
+		// if is only date version
+		if ($toDate) {
+			$value->setTime(0,0,0);
+		}
+
+		// still cant convert - bad format!!
+		if (!$value) {
+			throw new CantParseException(sprintf("Bad format date with value '%s'. Expected formats is '%s' or '%s'.", $date, $this->dateFormat->getDateFormat(), $this->dateFormat->getDateTimeFormat()));
+		}
+
+		return $value;
+	}
+
+	/**
+	 * Parse DateTime to string
+	 *
+	 * @param DateTime $dateTime
+	 * @return string
+	 * @throws CantParseException
+	 */
+	public function parseString(DateTime $dateTime)
+	{
+		if ($dateTime === NULL || get_class($dateTime) !== "DateTime") {
+			throw new CantParseException("Bad object or NULL given.");
+		}
+
+		if (((int) $dateTime->format("His")) === 0) {
+			return $dateTime->format($this->dateFormat->getDateFormat());
+		}
+		else {
+			return $dateTime->format($this->dateFormat->getDateTimeFormat());
+		}
+	}
+}

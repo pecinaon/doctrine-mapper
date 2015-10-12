@@ -14,7 +14,7 @@ DoctrineMapper requires PHP 5.5 or higher.
 Installation
 ------------
 
-The best way to install Kdyby/Console is using  [Composer](http://getcomposer.org/):
+The best way to install pecinaon/doctrine-mapper is using  [Composer](http://getcomposer.org/):
 
 ```sh
 $ composer require pecinaon/doctrine-mapper
@@ -23,7 +23,7 @@ $ composer require pecinaon/doctrine-mapper
 Configuration
 ---------------------
 
-This extension creates new configuration section `doctrineMapper`, the avabile configuration looks
+This extension creates new configuration section `doctrineMapper`, the available configuration looks
 
 ```yml
 doctrineMapper:
@@ -168,7 +168,7 @@ class ExampleFormMapper
 }
 ```
 The third argument in setValuesToEntity is optional, because when is empty, 
-the mapper fil all values from ArrayHash to entity when the property with same name exist in doctrine entity.
+the mapper fill all values from ArrayHash to entity when the property with same name exist in doctrine entity.
 The mapper can map all relations @ManyToMany, @ManyToOne - mapper find repository throw 
 Kdyby EntityManager with primary key a set entity to mapped entity.
 
@@ -402,7 +402,7 @@ class ExampleFormMapper
 
 Form builder automatically suggest type from property type. This builder automatically suggest required and numeric types.
 Automatically create component type from property type and find relations. When you have relation mapped by any annotation,
-the builder find values and keys from EntityManager from Kdbyby. Target entity have to specified __toString method, 
+the builder find values and keys from EntityManager from Kdyby. Target entity have to specified __toString method, 
 cause it is for label in select, radio, ...
 
 

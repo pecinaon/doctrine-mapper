@@ -472,7 +472,7 @@ public function getForm() {
 			]
 		]);
 
-		// this create container with name related and edit box for name and hidden value
+		// this create container with name related and edit box for name and hidden id value
 		$builder->add([
 			'propertyName'  => 'related',
 			'componentType' => BuilderDefinition::COMPONENT_TYPE_CONTAINER,

@@ -77,8 +77,8 @@ use Nette\Utils\ArrayHash;
 /**
  * Example Entity
  *
- * @ORM\Entity(repositoryClass="ExampleEntity")
- * @ORM\Table(name="tp_excample", indexes={
+ * @ORM\Entity(repositoryClass="ExampleRepository")
+ * @ORM\Table(name="tp_example", indexes={
  * })
  * @author Pecina Ondřej <pecina.ondrej@gmail.com>
  */
@@ -93,7 +93,7 @@ class ExampleEntity extends Object
 
 	/**
 	 * @ORM\Id
-	 * @ORM\Column(tye="integer", options={"unsigned"=true})
+	 * @ORM\Column(type="integer", options={"unsigned"=true})
 	 * @ORM\GeneratedValue
 	 * @var int
 	 */
@@ -168,8 +168,8 @@ class ExampleFormMapper
 }
 ```
 The third argument in setValuesToEntity is optional, because when is empty, 
-the mapper fill all values from ArrayHash to entity when the property with same name exist in doctrine entity.
-The mapper can map all relations @ManyToMany, @ManyToOne - mapper find repository throw 
+the mapper fil all values from ArrayHash to entity when the property with same name exist in doctrine entity.
+The mapper can map all relations @ManyToMany, @ManyToOne - mapper find related entity repository throws
 Kdyby EntityManager with primary key a set entity to mapped entity.
 
 Map Entity to Nette form
@@ -185,10 +185,10 @@ use Doctrine\ORM\Mapping as ORM;
 use Nette\Object;
 
 /**
- * User Entity
+ * Excample entity
  *
- * @ORM\Entity(repositoryClass="ExampleEntity")
- * @ORM\Table(name="tp_excample", indexes={
+ * @ORM\Entity(repositoryClass="ExampleRepository")
+ * @ORM\Table(name="tp_example", indexes={
  * })
  * @author Pecina Ondřej <pecina.ondrej@gmail.com>
  */
@@ -203,7 +203,7 @@ class ExampleEntity extends Object
 
 	/**
 	 * @ORM\Id
-	 * @ORM\Column(tye="integer", options={"unsigned"=true})
+	 * @ORM\Column(type="integer", options={"unsigned"=true})
 	 * @ORM\GeneratedValue
 	 * @var int
 	 */
@@ -227,7 +227,7 @@ class ExampleEntity extends Object
 
 	/**
 	 * @param string $name
-	 * @return ActivityEntity
+	 * @return ExampleEntity
 	 */
 	public function setName($name)
 	{
@@ -287,14 +287,14 @@ use Doctrine\ORM\Mapping as ORM;
 use Nette\Object;
 
 /**
- * User Entity
+ * Test related entity
  *
- * @ORM\Entity(repositoryClass="ExampleEntity")
- * @ORM\Table(name="tp_excample", indexes={
+ * @ORM\Entity(repositoryClass="ExampleRepositoryRel")
+ * @ORM\Table(name="tp_example_re", indexes={
  * })
  * @author Pecina Ondřej <pecina.ondrej@gmail.com>
  */
-class ExampleEntity extends Object
+class TestExampleEntityRel extends Object
 {
 
 	/**
@@ -305,7 +305,7 @@ class ExampleEntity extends Object
 
 	/**
 	 * @ORM\Id
-	 * @ORM\Column(tye="integer", options={"unsigned"=true})
+	 * @ORM\Column(type="integer", options={"unsigned"=true})
 	 * @ORM\GeneratedValue
 	 * @var int
 	 */
@@ -329,12 +329,89 @@ class ExampleEntity extends Object
 
 	/**
 	 * @param string $name
-	 * @return ActivityEntity
+	 * @return TestExampleEntityRel
 	 */
 	public function setName($name)
 	{
 		$this->name = $name;
 		return $this;
+	}
+}
+
+/**
+ * Example entity
+ *
+ * @ORM\Entity(repositoryClass="ExampleRepository")
+ * @ORM\Table(name="tp_example", indexes={
+ * })
+ * @author Pecina Ondřej <pecina.ondrej@gmail.com>
+ */
+class ExampleEntity extends Object
+{
+
+	/**
+	 * @ORM\Column(length=128)
+	 * @var string
+	 */
+	protected $name;
+
+	/**
+	 * @ORM\ManyToOne(targetEntity="App\TestExampleEntityRel")
+	 * @ORM\JoinColumn(name="rel_id", referencedColumnName="id")
+	 * @var OwnerEntity
+	 */
+	protected $related;
+
+	/**
+	 * @ORM\Id
+	 * @ORM\Column(type="integer", options={"unsigned"=true})
+	 * @ORM\GeneratedValue
+	 * @var int
+	 */
+	protected  $id;
+
+	/**
+	 * @return int
+	 */
+	public function getId()
+	{
+		return $this->id;
+	}
+
+	/**
+	 * @return string
+	 */
+	public function getName()
+	{
+		return $this->name;
+	}
+
+	/**
+	 * @param string $name
+	 * @return ExampleEntity
+	 */
+	public function setName($name)
+	{
+		$this->name = $name;
+		return $this;
+	}
+	
+	/**
+	 * @param TestExampleEntityRel $related
+	 * @return ExampleEntity
+	 */
+	public function setRelated(TestExampleEntityRel $related) 
+	{
+		$this->related = $related;
+		return $this;
+	}
+	
+	/**
+	 * @return TestExampleEntityRel
+	 */
+	public function getRelated()
+	{
+		return $this->related;
 	}
 }
 
@@ -353,12 +430,12 @@ class ExampleFormMapper
 	}
 
 
-	public function getForm() {
+public function getForm() {
 		$entity = new ExampleEntity();
 		$entity->setName('Example name');
 
 		// TRUE param build form automatically
- 		$builder = $this->formEntityBuilder->getBuilder($entity, TRUE);
+		$builder = $this->formEntityBuilder->getBuilder($entity, TRUE);
 		$form = $builder->getForm();
 
 		$form->addSubmit('Sub', 'Save');
@@ -373,13 +450,13 @@ class ExampleFormMapper
 		$builder->add([
 			'propertyName'  => 'name',
 			// allowed types in BuilderDefinition::COMPONENT_TYPE_*
-			'componentType'  => BuilderDefinition::COMPONENT_TYPE_TEXT_AREA, // override component type (component type is generated automatically from entity)
+			'componentType' => BuilderDefinition::COMPONENT_TYPE_TEXT_AREA, // override component type (component type is generated automatically from entity)
 			'settings' => [
 				'label' => 'Name',
 				'placeholder'   => 'example@example.com',
 				'required'      => TRUE,
 				'value'         => 'New name', // override value
-				'values'        => ['key'         => 'Value', 'key2'         => 'Value 2'], // set possible values for list (CheckboxList, RadioList, SelectBox,...)
+				'values'        => ['key' => 'Value', 'key2' => 'Value 2'], // set possible values for list (CheckboxList, RadioList, SelectBox,...)
 				'appendValidationRules' => [ // append validation rules
 					[
 						'validator' => Form::EMAIL,
@@ -392,6 +469,25 @@ class ExampleFormMapper
 						'text'      => 'Please fill number'
 					]
 				],
+			]
+		]);
+
+		// this create container with name related and edit box for name and hidden id value
+		$builder->add([
+			'propertyName'  => 'related',
+			'componentType' => BuilderDefinition::COMPONENT_TYPE_CONTAINER,
+			'settings' => [
+				[
+					'propertyName'  => 'name',
+					'componentType' => BuilderDefinition::COMPONENT_TYPE_TEXT,
+					'settings' => [
+						'label' => 'Name'
+					]
+				],
+				[
+					'propertyName'  => 'id',
+					'componentType' => BuilderDefinition::COMPONENT_TYPE_HIDDEN,
+				]
 			]
 		]);
 

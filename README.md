@@ -168,7 +168,7 @@ class ExampleFormMapper
 }
 ```
 The third argument in setValuesToEntity is optional, because when is empty, 
-the mapper fil all values from ArrayHash to entity when the property with same name exist in doctrine entity.
+the mapper fill all values from ArrayHash to entity when the property with same name exist in doctrine entity.
 The mapper can map all relations @ManyToMany, @ManyToOne - mapper find related entity repository throws
 Kdyby EntityManager with primary key a set entity to mapped entity.
 

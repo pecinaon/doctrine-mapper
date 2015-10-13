@@ -1,7 +1,12 @@
 <?php
 namespace DoctrineMapper;
 
+use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\Mapping\Column;
+use Doctrine\ORM\Mapping\ManyToMany;
+use Doctrine\ORM\Mapping\ManyToOne;
+use Doctrine\ORM\Mapping\OneToMany;
 use Kdyby\Doctrine\MissingClassException;
 use Nette\Object;
 use Nette\Reflection\ClassType;
@@ -52,30 +57,71 @@ class FormEntityMapper extends BaseMapper
 							if ($propertyType['type'] === \DateTime::class) {
 								// try with time
 								$value = $this->dateParser->parseDateTime($value);
-							} else if ($propertyType['type'] === 'int') {
+							} else if ($propertyType['type'] === 'integer') {
 								$value = (int) $value;
-							} else if ($propertyType['type'] === 'bool') {
+							} else if ($propertyType['type'] === 'boolean') {
 								$value = (bool) $value;
 							}
 						}
 					}
 					// Entities
-					else {
-						if (empty ($value)) {
-							continue;
-						}
+					else if (!empty ($value)) {
 						// try to find repository
 						$repository = $this->findRepository($propertyType['type'], $entity);
 
 						// maybe many to many - one to many
 						if ($propertyType['collection']) {
+							$pk = $this->getEntityPrimaryKeyName($this->findEntityWholeName($propertyType['type'], $entity));
+							if ($value instanceof ArrayHash && $value[0] instanceof ArrayHash) {
+								$newValues = new ArrayCollection();
+								$updatedValues = array();
+								foreach ($value as $val) {
+									$entity = new $propertyType['type'];
+
+									// exists key load
+									if (isset($val->$pk) && !empty($val->$pk)) {
+										$pkValue = $val->$pk;
+										$updatedValues[$pkValue] = 1;
+										$entity = $repository->find($pkValue);
+									}
+
+									$entity = $this->setValuesToEntity($val, $entity);
+									$newValues->add($entity);
+								}
+								/** @var ArrayCollection $oldValues */
+								$oldValues = $this->invokeGetter($column, $entity);
+								if ($oldValues !== NULL) {
+									foreach ($oldValues as $val) {
+										$pkValue = $this->invokeGetter($pk, $val);
+										if (array_key_exists($pkValue, $updatedValues)) {
+											// remove relation
+											$this->invokeGetter($column, $entity)->removeElement($val);
+										}
+									}
+								}
+								$value = $newValues;
+							}
 							$value = new ArrayCollection($repository->findBy(array(
-								$this->getEntityPrimaryKeyName($this->findEntityWholeName($propertyType['type'], $entity))    => $value
+								$pk => $value
 							)));
 						}
 						else {
 							// many to one
-							$value = $repository->find($value);
+							if ($value instanceof ArrayHash) {
+								$pk = $this->getEntityPrimaryKeyName($this->findEntityWholeName($propertyType['type'], $entity));
+								$entity = new $propertyType['type'];
+
+								// exists key = load
+								if (isset($value->$pk) && !empty($value->$pk)) {
+									$pkValue = $value->$pk;
+									$entity = $repository->find($pkValue);
+								}
+
+								$value = $this->setValuesToEntity($value, $entity);
+							}
+							else {
+								$value = $repository->find($value);
+							}
 						}
 					}
 				}
@@ -170,53 +216,49 @@ class FormEntityMapper extends BaseMapper
 	 */
 	private function readPropertyDataType($baseEntity, $name)
 	{
+		$annotationReader = new AnnotationReader();
 		// read property information
 		$reflectionClass = new ClassType($baseEntity);
 		$property = $reflectionClass->getProperty($name);
 
 		// if property exists
 		if ($property !== NULL) {
-			// read annotations
-			$annotations =  $property->getAnnotations();
-			foreach ($annotations as $name => $val) {
-				// if contains ORM annotations
-				if ($name === 'ORM\ManyToOne'
-					|| $name === 'ORM\ManyToMany'
-					|| $name === 'ORM\OneToMany') {
-					return  (isset($val[0]) ? [
-						'type'          => $val[0]['targetEntity'],
-						'relation'      => TRUE,
-						'collection'    => ($name === '$name' || $name === 'ORM\ManyToMany')
-					] : NULL);
-				} else if ($name === 'ORM\Column') {
-					// default type
-					$type = 'string';
-					$collection = FALSE;
-					if (count($val) > 0) {
-						if (isset ($val[0]['type'])) {
-							$type = $val[0]['type'];
-							if ($type === 'dateinterval') {
-								$type = \DateInterval::class;
-							} else if (strrpos($type, 'array') !== FALSE) {
-								$type = 'array';
-								$collection = TRUE;
-							} else if (strrpos($type, 'date') !== FALSE || $type === 'time') {
-								$type = \DateTime::class;
-							} else if ($type === 'integer') {
-								$type = 'int';
-							} else if ($type === 'boolean') {
-								$type = 'bool';
-							}
-						}
-					}
+			/** @var Column $column */
+			$column = $annotationReader->getPropertyAnnotation($property, Column::class);
+			/** @var ManyToOne $manyToOne */
+			$manyToOne = $annotationReader->getPropertyAnnotation($property, ManyToOne::class);
+			/** @var ManyToMany $manyToMany */
+			$manyToMany = $annotationReader->getPropertyAnnotation($property, ManyToMany::class);
+			/** @var OneToMany $oneToMany */
+			$oneToMany = $annotationReader->getPropertyAnnotation($property, OneToMany::class);
 
-					return [
-						'type'          => $type,
-						'collection'    => $collection,
-						'relation'      => FALSE
-					];
+			$type = NULL;
+			$collection = FALSE;
+			$relation = FALSE;
+			if ($column !== NULL) {
+				$type = $column->type;
+				if (strrpos($type, 'array') !== FALSE) {
+					$type = \DateTime::class;
+				} else if ($type === 'dateinterval') {
+					$type = \DateInterval::class;
+				} else if (strrpos($type, 'array') !== FALSE) {
+					$type = 'array';
+					$collection = TRUE;
 				}
+			} else if ($manyToOne !== NULL) {
+				$type = $manyToOne->targetEntity;
+				$relation = TRUE;
+			} else if ($manyToMany !== NULL || $oneToMany !== NULL) {
+				$collection = TRUE;
+				$type = ($manyToMany === NULL ? $oneToMany->targetEntity : $manyToMany->targetEntity);
+				$relation = TRUE;
 			}
+
+			return [
+				'type'          => $type,
+				'collection'    => $collection,
+				'relation'      => $relation
+			];
 		}
 
 		return NULL;

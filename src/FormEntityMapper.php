@@ -51,7 +51,7 @@ class FormEntityMapper extends BaseMapper
 
 				// if is connected entity try find value into storage
 				if ($propertyType !== NULL) {
-					// Base PHP Objects
+					// Base PHP Objets
 					if (!$propertyType['relation']) {
 						if ($value !== NULL && $value !== '') {
 							if ($propertyType['type'] === \DateTime::class) {
@@ -72,7 +72,7 @@ class FormEntityMapper extends BaseMapper
 						// maybe many to many - one to many
 						if ($propertyType['collection']) {
 							$pk = $this->getEntityPrimaryKeyName($this->findEntityWholeName($propertyType['type'], $entity));
-							if ($value instanceof ArrayHash && $value[0] instanceof ArrayHash) {
+							if ($value instanceof ArrayHash && isset($value[0]) && $value[0] instanceof ArrayHash) {
 								$newValues = new ArrayCollection();
 								$updatedValues = array();
 								foreach ($value as $val) {
@@ -100,10 +100,12 @@ class FormEntityMapper extends BaseMapper
 									}
 								}
 								$value = $newValues;
+							} else {
+
+								$value = new ArrayCollection($repository->findBy(array(
+									$pk => (array) $value
+								)));
 							}
-							$value = new ArrayCollection($repository->findBy(array(
-								$pk => $value
-							)));
 						}
 						else {
 							// many to one

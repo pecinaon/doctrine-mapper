@@ -185,7 +185,7 @@ use Doctrine\ORM\Mapping as ORM;
 use Nette\Object;
 
 /**
- * Excample entity
+ * Example entity
  *
  * @ORM\Entity(repositoryClass="ExampleRepository")
  * @ORM\Table(name="tp_example", indexes={

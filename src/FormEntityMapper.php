@@ -1,13 +1,8 @@
 <?php
 namespace DoctrineMapper;
 
-use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\Mapping\ClassMetadata;
-use Doctrine\ORM\Mapping\Column;
-use Doctrine\ORM\Mapping\ManyToMany;
-use Doctrine\ORM\Mapping\ManyToOne;
-use Doctrine\ORM\Mapping\OneToMany;
 use Kdyby\Doctrine\MissingClassException;
 use Nette\Object;
 use Nette\Reflection\ClassType;

@@ -1,16 +1,13 @@
 <?php
 namespace DoctrineMapper\Builder;
 
-use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\ORM\Mapping\Column;
-use Doctrine\ORM\Mapping\JoinColumn;
-use Doctrine\ORM\Mapping\ManyToOne;
-use Doctrine\ORM\Mapping\OneToMany;
 use DoctrineMapper\BaseMapper;
 use DoctrineMapper\EntityFormMapper;
 use DoctrineMapper\Exception\InvalidStateException;
 use DoctrineMapper\Parsers\Date\DateParser;
 use Kdyby\Doctrine\EntityManager;
+use Kdyby\Doctrine\Mapping\ClassMetadata;
 use Nette\Application\UI\Form;
 use Nette\Forms\Container;
 use Nette\Forms\Controls\BaseControl;
@@ -44,6 +41,11 @@ class FormBuilder extends BaseMapper
 	private $entityReflection;
 
 	/**
+	 * @var ClassMetadata
+	 */
+	private $entityMetadata;
+
+	/**
 	 * @var array
 	 */
 	private $hidden = array();
@@ -53,10 +55,6 @@ class FormBuilder extends BaseMapper
 	 */
 	private $form;
 
-	/**
-	 * @var AnnotationReader
-	 */
-	private $annotationReader;
 
 	/**
 	 * @param EntityFormMapper $entityFormMapper
@@ -76,7 +74,7 @@ class FormBuilder extends BaseMapper
 		$this->form = $container;
 
 		$this->entityReflection = new ClassType($entity);
-		$this->annotationReader = new AnnotationReader();
+		$this->entityMetadata = $this->entityManager->getClassMetadata(get_class($entity));
 
 		if (!($this->form instanceof Container)) {
 			throw new InvalidStateException(sprintf('Form class excepted the class witch is instance of Nette\Forms\Container %s given', gettype($this->form)));
@@ -334,72 +332,68 @@ class FormBuilder extends BaseMapper
 		}
 	}
 
+
 	/**
-	 * Get BuilderDefinition from entity property
-	 *
-	 * @param string $propertyName
-	 * @param bool $fillValues
+	 * @param $propertyName
+	 * @param bool|true $fillValues
 	 * @return BuilderDefinition|null
 	 * @throws InvalidStateException
+	 * @throws \Doctrine\ORM\Mapping\MappingException
 	 */
 	private function getPropertyRule($propertyName, $fillValues = TRUE)
 	{
-		$property = $this->entityReflection->getProperty($propertyName);
-
-		$annotations = $this->annotationReader->getPropertyAnnotations($property);
 		$rule = new BuilderDefinition($propertyName);
-		foreach ($annotations as $annotation) {
+		if($this->entityMetadata->hasField($propertyName))
+		{
+			// Column
+			if($this->getEntityPrimaryKeyName($this->entity) === $propertyName)
+			{
+				$rule->setComponentType(BuilderDefinition::COMPONENT_TYPE_HIDDEN);
+				$rule->setRequired(FALSE);
+			} else
+			{
+				$fieldMapping = $this->entityMetadata->getFieldMapping($propertyName);
 
-			switch (get_class($annotation)) {
-				case 'Doctrine\ORM\Mapping\Column':
-					if ($this->getEntityPrimaryKeyName($this->entity) === $propertyName) {
-						$rule->setComponentType(BuilderDefinition::COMPONENT_TYPE_HIDDEN);
-						$rule->setRequired(FALSE);
-					}
-					else {
-						$type = BuilderDefinition::COMPONENT_TYPE_TEXT;
-						$rule->setRequired(!$annotation->nullable);
+				$type = BuilderDefinition::COMPONENT_TYPE_TEXT;
+				$rule->setRequired(!$fieldMapping['nullable']);
 
-						/** @var Column $annotation */
-						if ($annotation->type === 'boolean') {
-							$type = BuilderDefinition::COMPONENT_TYPE_CHECKBOX;
-						}
+				/** @var Column $annotation */
+				if ($fieldMapping['type'] === 'boolean') {
+					$type = BuilderDefinition::COMPONENT_TYPE_CHECKBOX;
+				}
 
-						// is numeric?
-						if ($annotation->type === 'integer'
-							|| $annotation->type === 'float'
-							|| $annotation->type === 'bigint'
-							|| $annotation->type === 'decimal'
-							|| $annotation->type === 'smallint'
-						) {
-							$rule->addValidationRule(Form::NUMERIC, 'This is required in numeric format', TRUE);
-						}
+				// is numeric?
+				if ($fieldMapping['type'] === 'integer'
+					|| $fieldMapping['type'] === 'float'
+					|| $fieldMapping['type'] === 'bigint'
+					|| $fieldMapping['type'] === 'decimal'
+					|| $fieldMapping['type'] === 'smallint'
+				) {
+					$rule->addValidationRule(Form::NUMERIC, 'This is required in numeric format', TRUE);
+				}
 
-						$rule->setComponentType($type);
-					}
-					break;
-
-				case 'Doctrine\ORM\Mapping\ManyToOne':
-					/** @var ManyToOne $annotation */
+				$rule->setComponentType($type);
+			}
+		} else if($this->entityMetadata->hasAssociation($propertyName))
+		{
+			$associationMapping = $this->entityMetadata->getAssociationMapping($propertyName);
+			switch($associationMapping['type'])
+			{
+				case ClassMetadata::MANY_TO_ONE:
 					$rule->setComponentType(BuilderDefinition::COMPONENT_TYPE_SELECT);
 					if ($fillValues) {
-						$rule->setValues($this->getPossibleValues($annotation->targetEntity));
+						$rule->setValues($this->getPossibleValues($associationMapping['targetEntity']));
 					}
-					$rule->setTargetEntity($annotation->targetEntity);
+					$rule->setTargetEntity($associationMapping['targetEntity']);
 					$rule->setRequired(TRUE);
 					break;
-				case 'Doctrine\ORM\Mapping\ManyToMany':
-					/** @var OneToMany $annotation */
+				case ClassMetadata::MANY_TO_MANY:
 					$rule->setComponentType(BuilderDefinition::COMPONENT_TYPE_MULTI_SELECT);
 					if ($fillValues) {
-						$rule->setValues($this->getPossibleValues($annotation->targetEntity));
+						$rule->setValues($this->getPossibleValues($associationMapping['targetEntity']));
 					}
 					$rule->setRequired(TRUE);
-					$rule->setTargetEntity($annotation->targetEntity);
-					break;
-				case 'Doctrine\ORM\Mapping\JoinColumn':
-					/** @var JoinColumn $annotation */
-					$rule->setRequired(!$annotation->nullable);
+					$rule->setTargetEntity($associationMapping['targetEntity']);
 					break;
 			}
 		}

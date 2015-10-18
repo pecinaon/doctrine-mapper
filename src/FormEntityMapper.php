@@ -1,12 +1,8 @@
 <?php
 namespace DoctrineMapper;
 
-use Doctrine\Common\Annotations\AnnotationReader;
 use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\ORM\Mapping\Column;
-use Doctrine\ORM\Mapping\ManyToMany;
-use Doctrine\ORM\Mapping\ManyToOne;
-use Doctrine\ORM\Mapping\OneToMany;
+use Doctrine\ORM\Mapping\ClassMetadata;
 use Kdyby\Doctrine\MissingClassException;
 use Nette\Object;
 use Nette\Reflection\ClassType;
@@ -212,48 +208,43 @@ class FormEntityMapper extends BaseMapper
 	 * Read property information
 	 * Read relations and base DB types for convert values to correct format
 	 *
-	 * @param object $baseEntity
-	 * @param string $name
-	 * @return array|NULL
+	 * @param $baseEntity
+	 * @param $name
+	 * @return array|null
+	 * @throws \Doctrine\ORM\Mapping\MappingException
 	 */
 	private function readPropertyDataType($baseEntity, $name)
 	{
-		$annotationReader = new AnnotationReader();
-		// read property information
-		$reflectionClass = new ClassType($baseEntity);
-		$property = $reflectionClass->getProperty($name);
+		$metaData = $this->entityManager->getClassMetadata(get_class($baseEntity));
 
-		// if property exists
-		if ($property !== NULL) {
-			/** @var Column $column */
-			$column = $annotationReader->getPropertyAnnotation($property, Column::class);
-			/** @var ManyToOne $manyToOne */
-			$manyToOne = $annotationReader->getPropertyAnnotation($property, ManyToOne::class);
-			/** @var ManyToMany $manyToMany */
-			$manyToMany = $annotationReader->getPropertyAnnotation($property, ManyToMany::class);
-			/** @var OneToMany $oneToMany */
-			$oneToMany = $annotationReader->getPropertyAnnotation($property, OneToMany::class);
+		$type = NULL;
+		$collection = FALSE;
+		$relation = FALSE;
 
-			$type = NULL;
-			$collection = FALSE;
-			$relation = FALSE;
-			if ($column !== NULL) {
-				$type = $column->type;
-				if (strrpos($type, 'array') !== FALSE) {
-					$type = \DateTime::class;
-				} else if ($type === 'dateinterval') {
-					$type = \DateInterval::class;
-				} else if (strrpos($type, 'array') !== FALSE) {
-					$type = 'array';
-					$collection = TRUE;
-				}
-			} else if ($manyToOne !== NULL) {
-				$type = $manyToOne->targetEntity;
-				$relation = TRUE;
-			} else if ($manyToMany !== NULL || $oneToMany !== NULL) {
+		if($metaData->hasField($name))
+		{
+			$type = $metaData->getTypeOfField($name);
+			if (strrpos($type, 'array') !== FALSE) {
+				$type = \DateTime::class;
+			} else if ($type === 'dateinterval') {
+				$type = \DateInterval::class;
+			} else if (strrpos($type, 'array') !== FALSE) {
+				$type = 'array';
 				$collection = TRUE;
-				$type = ($manyToMany === NULL ? $oneToMany->targetEntity : $manyToMany->targetEntity);
-				$relation = TRUE;
+			}
+		} else if($metaData->hasAssociation($name))
+		{
+			$association = $metaData->getAssociationMapping($name);
+
+			switch($association['type'])
+			{
+				case ClassMetadata::TO_ONE:
+					$type = $association['targetEntity'];
+					$relation = TRUE;
+				case ClassMetadata::TO_MANY:
+					$relation = TRUE;
+					$collection = TRUE;
+					$type = $association['targetEntity'];
 			}
 
 			return [

@@ -40,10 +40,10 @@ class DoctrineMapperExtension  extends Nette\DI\CompilerExtension
 		$builder->addDefinition($this->prefix('arrayAccessEntityMapper'))
 			->setClass('DoctrineMapper\ArrayAccessEntityMapper');
 
-		$builder->addDefinition($this->prefix('formEntityMapper'))
+		$builder->addDefinition($this->prefix('formEntityBuilder'))
 			->setClass('DoctrineMapper\FormEntityBuilder');
 
-		$builder->addDefinition($this->prefix('formEntityBuilder'))
+		$builder->addDefinition($this->prefix('formEntityMapper'))
 			->setClass('DoctrineMapper\FormEntityMapper');
 
 	}

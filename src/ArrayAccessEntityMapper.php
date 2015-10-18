@@ -3,6 +3,7 @@ namespace DoctrineMapper;
 
 use ArrayAccess;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Kdyby\Doctrine\MissingClassException;
 use Nette\Reflection\ClassType;
@@ -21,7 +22,7 @@ class ArrayAccessEntityMapper extends BaseMapper
 	 * Map all values
 	 *
 	 * @param ArrayAccess $values
-	 * @param object $entity
+	 * @param Object $entity
 	 * @param array $columns
 	 * @return Object $entity
 	 * @throws MapperException
@@ -70,23 +71,17 @@ class ArrayAccessEntityMapper extends BaseMapper
 					}
 					// try to find repository
 					$targetEntity = $association['targetEntity'];
+					// find repository for entity
 					$repository = $this->findRepository($targetEntity, $entity);
+
+					// get primary key for entity
 					$pk = $this->getEntityPrimaryKeyName($this->findEntityWholeName($targetEntity, $entity));
 					// maybe many to many - one to many - collection association
 					if ($metaData->isCollectionValuedAssociation($column)) {
 						if ($value instanceof ArrayAccess && isset($value[0]) && $value[0] instanceof ArrayAccess) {
 							$newValues = new ArrayCollection();
 							foreach ($value as $val) {
-								$entity = new $targetEntity;
-
-								// exists key load
-								if (isset($val->$pk) && !empty($val->$pk)) {
-									$pkValue = $val->$pk;
-									$entity = $repository->find($pkValue);
-								}
-
-								$entity = $this->setToEntity($val, $entity);
-								$newValues->add($entity);
+								$newValues->add($this->getMappedEntity($val, $targetEntity, $pk, $repository));
 							}
 							/** @var ArrayCollection $oldValues */
 							$oldValues = $this->invokeGetter($column, $entity);
@@ -101,27 +96,29 @@ class ArrayAccessEntityMapper extends BaseMapper
 								}
 							}
 							$value = $newValues;
-						} else {
+						} else if (!($value instanceof ArrayAccess)) {
 							$value = new ArrayCollection($repository->findBy(array(
 								$pk => (array) $value
 							)));
+						} else {
+							throw new MapperException(sprintf("Values for property %s expected ArrayAccess or ArrayAccess of ArrayAccess , %s given", $column, gettype($value)));
 						}
 					}
 					else if ($metaData->isSingleValuedAssociation($column)) {
 						// many to one
+						$keyValue = $value;
+						// create or update entity
 						if ($value instanceof ArrayAccess) {
-							$entity = new $targetEntity;
-
-							// exists key = load
-							if (isset($value->$pk) && !empty($value->$pk)) {
-								$pkValue = $value->$pk;
-								$entity = $repository->find($pkValue);
-							}
-
-							$value = $this->setToEntity($value, $entity);
+							$value = $this->getMappedEntity($value, $targetEntity, $pk, $repository);
 						}
+						// only key - try to find during repository
 						else {
 							$value = $repository->find($value);
+						}
+
+						// NULL returned - bad situation
+						if ($value === NULL) {
+							throw new MapperException(sprintf("Can not find or create Entity (%s) for column with primary key %s.", $targetEntity, $column, $keyValue));
 						}
 					}
 				}
@@ -144,7 +141,7 @@ class ArrayAccessEntityMapper extends BaseMapper
 	 *
 	 * @param string $className
 	 * @param object $entity
-	 * @return \Kdyby\Doctrine\EntityRepository|null
+	 * @return EntityRepository|NULL
 	 * @throws MapperException
 	 */
 	private function findRepository($className, $entity)
@@ -171,7 +168,7 @@ class ArrayAccessEntityMapper extends BaseMapper
 	/**
 	 * Try to find entity class in possible NS
 	 *
-	 * @param string $className
+	 * @param class $className
 	 * @param object $entity
 	 * @return null|string
 	 */
@@ -205,5 +202,26 @@ class ArrayAccessEntityMapper extends BaseMapper
 		}
 
 		return $existingClass;
+	}
+
+	/**
+	 * @param mixed $value
+	 * @param class $targetEntity
+	 * @param string $pk
+	 * @param EntityRepository $repository
+	 * @return Object
+	 *
+	 * @throws MapperException
+	 */
+	private function getMappedEntity($value, $targetEntity, $pk, EntityRepository $repository) {
+		$entity = new $targetEntity;
+
+		// exists key load
+		if (isset($value->$pk) && !empty($value->$pk)) {
+			$pkValue = $value->$pk;
+			$entity = $repository->find($pkValue);
+		}
+
+		return $this->setToEntity($value, $entity);
 	}
 }

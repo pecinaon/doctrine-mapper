@@ -68,7 +68,7 @@ Map ArrayHash (Form result) to Entity
 <?php
 namespace App;
 
-use DoctrineMapper\FormEntityMapper;
+use DoctrineMapper\ArrayAccessEntityMapper;
 use Nette\Application\UI\Form;
 use Doctrine\ORM\Mapping as ORM;
 use Nette\Object;
@@ -128,16 +128,16 @@ class ExampleEntity extends Object
 
 class ExampleFormMapper
 {
-	/** @var FormEntityMapper */
-	private $formEntityMapper;
+	/** @var ArrayAccessEntityMapper */
+	private $arrayAccessEntityMapper;
 
 	/**
 	 * ExampleFormMapper constructor.
-	 * @param FormEntityMapper $formEntityMapper
+	 * @param ArrayAccessEntityMapper $arrayAccessEntityMapper
 	 */
-	public function __construct(FormEntityMapper $formEntityMapper)
+	public function __construct(ArrayAccessEntityMapper $arrayAccessEntityMapper)
 	{
-		$this->formEntityMapper = $formEntityMapper;
+		$this->arrayAccessEntityMapper = $arrayAccessEntityMapper;
 	}
 
 	public function getForm() {
@@ -151,13 +151,13 @@ class ExampleFormMapper
 			$entity  = new ExampleEntity();
 
 			// array with name is not reuired - if is not set, set all values with existing properties in entity
-			$this->formEntityMapper->setValuesToEntity($form->getValues(), $entity, ['name']);
+			$this->arrayAccessEntityMapper->setToEntity($form->getValues(), $entity, ['name']);
 			
 			// works same like line above
-			$this->formEntityMapper->setValuesToEntity($form->getValues(), $entity);
+			$this->arrayAccessEntityMapper->setToEntity($form->getValues(), $entity);
 			
 			// you can map also in this way 
-			$this->formEntityMapper->setValuesToEntity(ArrayHash::from([
+			$this->arrayAccessEntityMapper->setToEntity(ArrayHash::from([
 				'name'  => 'Testing name'
 			]), $entity);
 			// do stuff with entity
@@ -167,7 +167,7 @@ class ExampleFormMapper
 	}
 }
 ```
-The third argument in setValuesToEntity is optional, because when is empty, 
+The third argument in setToEntity is optional, because when is empty, 
 the mapper fill all values from ArrayHash to entity when the property with same name exist in doctrine entity.
 The mapper can map all relations @ManyToMany, @ManyToOne - mapper find related entity repository throws
 Kdyby EntityManager with primary key a set entity to mapped entity.

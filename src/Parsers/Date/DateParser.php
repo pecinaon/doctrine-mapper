@@ -15,13 +15,18 @@ class DateParser
 	/** @var IDateFormat */
 	private $dateFormat;
 
+	/** @var IDateDecorator */
+	private $decorator;
+
 	/**
 	 * DateParser constructor.
 	 * @param IDateFormat $dateFormat
+	 * @param IDateDecorator $decorator
 	 */
-	public function __construct(IDateFormat $dateFormat)
+	public function __construct(IDateFormat $dateFormat, IDateDecorator $decorator)
 	{
 		$this->dateFormat = $dateFormat;
+		$this->decorator = $decorator;
 	}
 
 	/**
@@ -54,7 +59,7 @@ class DateParser
 			throw new CantParseException(sprintf("Bad format date with value '%s'. Expected formats is '%s' or '%s'.", $date, $this->dateFormat->getDateFormat(), $this->dateFormat->getDateTimeFormat()));
 		}
 
-		return $value;
+		return $this->decorator->decorate($value);
 	}
 
 	/**

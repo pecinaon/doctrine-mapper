@@ -21,20 +21,24 @@ class ArrayAccessEntityMapper extends BaseMapper
 	 * Dynamically map values to entity
 	 * Map all values
 	 *
-	 * @param ArrayAccess $values
-	 * @param Object $entity
+	 * @param array|ArrayAccess $values
+	 * @param object $entity
 	 * @param array $columns
 	 * @return Object $entity
 	 * @throws MapperException
 	 */
-	public function setToEntity(ArrayAccess $values, $entity, array $columns = array())
+	public function setToEntity($values, $entity, array $columns = array())
 	{
 		if (!is_object($entity)) {
 			throw new MapperException(sprintf("Entity have to be object, %s given", gettype($entity)));
 		}
 
+		if ($values instanceof ArrayAccess) {
+			$values = $this->convertToArray($values);
+		}
+
 		if (empty ($columns)) {
-			$columns = array_keys((array) $values);
+			$columns = array_keys($values);
 		}
 
 		/** @var ClassMetadata $metaData */
@@ -42,9 +46,9 @@ class ArrayAccessEntityMapper extends BaseMapper
 
 		foreach($columns as $column) {
 			$setterName = 'set' . ucfirst($column);
-			if(method_exists($entity, $setterName) && isset($values->$column)) {
+			if(method_exists($entity, $setterName) && isset($values[$column])) {
 				// load value
-				$value = $values->offsetGet($column);
+				$value = $values[$column];
 
 				// Base PHP types
 				if ($metaData->hasField($column)) {
@@ -78,7 +82,7 @@ class ArrayAccessEntityMapper extends BaseMapper
 					$pk = $this->getEntityPrimaryKeyName($this->findEntityWholeName($targetEntity, $entity));
 					// maybe many to many - one to many - collection association
 					if ($metaData->isCollectionValuedAssociation($column)) {
-						if ($value instanceof ArrayAccess && isset($value[0]) && $value[0] instanceof ArrayAccess) {
+						if (is_array($value) && isset($value[0]) && is_array($value[0])) {
 							$newValues = new ArrayCollection();
 							foreach ($value as $val) {
 								$newValues->add($this->getMappedEntity($val, $targetEntity, $pk, $repository));
@@ -96,12 +100,12 @@ class ArrayAccessEntityMapper extends BaseMapper
 								}
 							}
 							$value = $newValues;
-						} else if (!($value instanceof ArrayAccess)) {
+						} else if (is_array($value)) {
 							$value = new ArrayCollection($repository->findBy(array(
 								$pk => (array) $value
 							)));
 						} else {
-							throw new MapperException(sprintf("Values for property %s expected ArrayAccess or ArrayAccess of ArrayAccess , %s given", $column, gettype($value)));
+							throw new MapperException(sprintf("Values for property %s expected array or array of array , %s given", $column, gettype($value)));
 						}
 					}
 					else if ($metaData->isSingleValuedAssociation($column)) {
@@ -134,6 +138,25 @@ class ArrayAccessEntityMapper extends BaseMapper
 		}
 
 		return $entity;
+	}
+
+	/**
+	 * Convert to array recursive
+	 *
+	 * @param ArrayAccess $arrayAccess
+	 * @return array
+	 */
+	private function convertToArray(ArrayAccess $arrayAccess)
+	{
+		$values = (array) $arrayAccess;
+
+		foreach ($values as $key => $value) {
+			if ($value instanceof ArrayAccess) {
+				$values[$key] = $this->convertToArray($value);
+			}
+		}
+
+		return $values;
 	}
 
 	/**

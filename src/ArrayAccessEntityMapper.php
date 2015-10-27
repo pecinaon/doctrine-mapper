@@ -37,6 +37,10 @@ class ArrayAccessEntityMapper extends BaseMapper
 			$values = $this->convertToArray($values);
 		}
 
+		if(!is_array($values)) {
+			throw new MapperException(sprintf("Values can not be mapped expected format is array|ArrayAccess, %s given", gettype($values)));
+		}
+
 		if (empty ($columns)) {
 			$columns = array_keys($values);
 		}

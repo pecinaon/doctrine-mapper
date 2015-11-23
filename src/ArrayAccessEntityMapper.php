@@ -59,8 +59,7 @@ class ArrayAccessEntityMapper extends BaseMapper
 				$targetProperty = $columnsMapping[$column];
 			}
 
-			$setterName = 'set' . ucfirst($targetProperty);
-			if(method_exists($entity, $setterName) && isset($values[$column])) {
+			if(isset($values[$column])) {
 				// load value
 				$value = $values[$column];
 
@@ -147,7 +146,7 @@ class ArrayAccessEntityMapper extends BaseMapper
 				}
 
 				// set value
-				Callback::invokeArgs(array($entity, $setterName), [$value]);
+				$metaData->setFieldValue($entity, $targetProperty, $value);
 			}
 		}
 

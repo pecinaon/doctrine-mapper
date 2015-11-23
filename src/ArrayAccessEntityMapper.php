@@ -21,34 +21,52 @@ class ArrayAccessEntityMapper extends BaseMapper
 	 * Dynamically map values to entity
 	 * Map all values
 	 *
-	 * @param ArrayAccess $values
-	 * @param Object $entity
+	 * @param array|ArrayAccess $values
+	 * @param object $entity
 	 * @param array $columns
-	 * @return Object $entity
+	 * @param array $columnsMapping
+	 *
+	 * @return object entity
+	 *
+	 * @throws Exception\CantParseException
 	 * @throws MapperException
+	 * @throws \Doctrine\ORM\Mapping\MappingException
 	 */
-	public function setToEntity(ArrayAccess $values, $entity, array $columns = array())
+	public function setToEntity($values, $entity, array $columns = array(), array $columnsMapping = array())
 	{
 		if (!is_object($entity)) {
 			throw new MapperException(sprintf("Entity have to be object, %s given", gettype($entity)));
 		}
 
+		if ($values instanceof ArrayAccess) {
+			$values = $this->convertToArray($values);
+		}
+
+		if(!is_array($values)) {
+			throw new MapperException(sprintf("Values can not be mapped expected format is array|ArrayAccess, %s given", gettype($values)));
+		}
+
 		if (empty ($columns)) {
-			$columns = array_keys((array) $values);
+			$columns = array_keys($values);
 		}
 
 		/** @var ClassMetadata $metaData */
 		$metaData = $this->entityManager->getClassMetadata(get_class($entity));
 
 		foreach($columns as $column) {
-			$setterName = 'set' . ucfirst($column);
-			if(method_exists($entity, $setterName) && isset($values->$column)) {
+			$targetProperty = $column;
+			if (isset ($columnsMapping[$column])) {
+				$targetProperty = $columnsMapping[$column];
+			}
+
+			$setterName = 'set' . ucfirst($targetProperty);
+			if(method_exists($entity, $setterName) && isset($values[$column])) {
 				// load value
-				$value = $values->offsetGet($column);
+				$value = $values[$column];
 
 				// Base PHP types
-				if ($metaData->hasField($column)) {
-					$type = $metaData->getTypeOfField($column);
+				if ($metaData->hasField($targetProperty)) {
+					$type = $metaData->getTypeOfField($targetProperty);
 					if ($value !== NULL && $value !== '') {
 						if (strrpos($type, 'date') !== FALSE) {
 							$value = $this->dateParser->parseDateTime($value);
@@ -63,7 +81,7 @@ class ArrayAccessEntityMapper extends BaseMapper
 				}
 				// Entities
 				else if (!empty ($value)) {
-					$association = $metaData->getAssociationMapping($column);
+					$association = $metaData->getAssociationMapping($targetProperty);
 
 					// not reference
 					if ($association === NULL) {
@@ -77,16 +95,19 @@ class ArrayAccessEntityMapper extends BaseMapper
 					// get primary key for entity
 					$pk = $this->getEntityPrimaryKeyName($this->findEntityWholeName($targetEntity, $entity));
 					// maybe many to many - one to many - collection association
-					if ($metaData->isCollectionValuedAssociation($column)) {
-						if ($value instanceof ArrayAccess && isset($value[0]) && $value[0] instanceof ArrayAccess) {
+					if ($metaData->isCollectionValuedAssociation($targetProperty)) {
+						if (is_array($value)) {
 							$newValues = new ArrayCollection();
-							foreach ($value as $val) {
-								$newValues->add($this->getMappedEntity($val, $targetEntity, $pk, $repository));
-							}
 							/** @var ArrayCollection $oldValues */
-							$oldValues = $this->invokeGetter($column, $entity);
-
-							// remove old relations
+							$oldValues = $this->invokeGetter($targetProperty, $entity);
+							foreach ($value as $item) {
+								if (is_array($item)) {
+									$newValues->add($this->getMappedEntity($item, $targetEntity, $pk, $repository));
+								}
+								else {
+									$newValues->add($repository->find($item));
+								}
+							}
 							if ($oldValues !== NULL) {
 								foreach ($oldValues as $val) {
 									if ($newValues->contains($val)) {
@@ -95,16 +116,13 @@ class ArrayAccessEntityMapper extends BaseMapper
 									}
 								}
 							}
+
 							$value = $newValues;
-						} else if (!($value instanceof ArrayAccess)) {
-							$value = new ArrayCollection($repository->findBy(array(
-								$pk => (array) $value
-							)));
 						} else {
-							throw new MapperException(sprintf("Values for property %s expected ArrayAccess or ArrayAccess of ArrayAccess , %s given", $column, gettype($value)));
+							throw new MapperException(sprintf("Values for property %s expected array or array of array , %s given", $targetProperty, gettype($value)));
 						}
 					}
-					else if ($metaData->isSingleValuedAssociation($column)) {
+					else if ($metaData->isSingleValuedAssociation($targetProperty)) {
 						// many to one
 						$keyValue = $value;
 						// create or update entity
@@ -118,7 +136,7 @@ class ArrayAccessEntityMapper extends BaseMapper
 
 						// NULL returned - bad situation
 						if ($value === NULL) {
-							throw new MapperException(sprintf("Can not find or create Entity (%s) for column with primary key %s.", $targetEntity, $column, $keyValue));
+							throw new MapperException(sprintf("Can not find or create Entity (%s) for column with primary key %s.", $targetEntity, $targetProperty, $keyValue));
 						}
 					}
 				}
@@ -134,6 +152,25 @@ class ArrayAccessEntityMapper extends BaseMapper
 		}
 
 		return $entity;
+	}
+
+	/**
+	 * Convert to array recursive
+	 *
+	 * @param ArrayAccess $arrayAccess
+	 * @return array
+	 */
+	private function convertToArray(ArrayAccess $arrayAccess)
+	{
+		$values = (array) $arrayAccess;
+
+		foreach ($values as $key => $value) {
+			if ($value instanceof ArrayAccess) {
+				$values[$key] = $this->convertToArray($value);
+			}
+		}
+
+		return $values;
 	}
 
 	/**

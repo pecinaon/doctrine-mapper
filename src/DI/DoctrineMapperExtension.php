@@ -16,7 +16,8 @@ use Nette\DI\Config;
 class DoctrineMapperExtension  extends Nette\DI\CompilerExtension
 {
 	public $defaults = array(
-		'dateFormat'    => 'DoctrineMapper\Parsers\Date\SimpleDateFormat'
+		'dateFormat'    => 'DoctrineMapper\Parsers\Date\SimpleDateFormat',
+		'dateDecorator' =>'DoctrineMapper\Parsers\Date\SimpleDateDecorator'
 	);
 
 	public function loadConfiguration()
@@ -28,8 +29,15 @@ class DoctrineMapperExtension  extends Nette\DI\CompilerExtension
 			throw new UnexpectedValueException(sprintf('Class %s not exists.', $config['dateFormat']));
 		}
 
+		if (!class_exists($config['dateDecorator'])) {
+			throw new UnexpectedValueException(sprintf('Class %s not exists.', $config['dateDecorator']));
+		}
+
 		$builder->addDefinition($this->prefix('dateFormat'))
 			->setClass($config['dateFormat']);
+
+		$builder->addDefinition($this->prefix('dateDecorator'))
+			->setClass($config['dateDecorator']);
 
 		$builder->addDefinition($this->prefix('dateParser'))
 			->setClass('DoctrineMapper\Parsers\Date\DateParser');

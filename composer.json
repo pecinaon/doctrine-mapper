@@ -18,8 +18,8 @@
 		"nette/utils": "~2.3@dev",
 		"nette/forms": "~2.3@dev",
 		"nette/reflection": "~2.3@dev",
-		"kdyby/annotations": "~2.2.0@dev",
-		"kdyby/doctrine": "dev-master"
+		"kdyby/annotations": "~2.3@dev",
+		"kdyby/doctrine": "v3.0.0"
 	},
 	"require-dev": {
 		"nette/application": "~2.3@dev",
@@ -43,7 +43,6 @@
 		"nette/utils": "~2.3@dev",
 		"latte/latte": "~2.3@dev",
 		"tracy/tracy": "~2.3@dev",
-
 		"nette/tester": "~1.3@rc"
 	},
 	"conflict": {

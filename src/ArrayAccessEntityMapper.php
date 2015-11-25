@@ -74,7 +74,7 @@ class ArrayAccessEntityMapper extends BaseMapper
 							$value = (int) $value;
 						} else if ($type === 'boolean') {
 							$value = (bool) $value;
-						} else if (strrpos($type, 'date') !== FALSE) {
+						} else if (strrpos($type, 'array') !== FALSE) {
 							$value = (array) $value;
 						}
 					}
@@ -142,7 +142,7 @@ class ArrayAccessEntityMapper extends BaseMapper
 				}
 
 				// if empty ? set NULL
-				if (empty ($value) && $value !== FALSE) {
+				if (empty ($value) && $value !== FALSE && $value !== 0) {
 					$value = NULL;
 				}
 

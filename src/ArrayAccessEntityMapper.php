@@ -254,8 +254,8 @@ class ArrayAccessEntityMapper extends BaseMapper
 		$entity = new $targetEntity;
 
 		// exists key load
-		if (isset($value->$pk) && !empty($value->$pk)) {
-			$pkValue = $value->$pk;
+		if (isset($value[$pk]) && !empty($value[$pk])) {
+			$pkValue = $value[$pk];
 			$entity = $repository->find($pkValue);
 		}
 

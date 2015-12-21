@@ -126,7 +126,7 @@ class ArrayAccessEntityMapper extends BaseMapper
 						// many to one
 						$keyValue = $value;
 						// create or update entity
-						if ($value instanceof ArrayAccess) {
+						if (is_array($value)) {
 							$value = $this->getMappedEntity($value, $targetEntity, $pk, $repository);
 						}
 						// only key - try to find during repository

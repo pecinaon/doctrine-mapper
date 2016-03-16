@@ -5,6 +5,7 @@ use ArrayAccess;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use DoctrineMapper\Exception\MethodNotExistsException;
 use Kdyby\Doctrine\MissingClassException;
 use Nette\Reflection\ClassType;
 use Nette\Utils\Callback;
@@ -147,6 +148,10 @@ class ArrayAccessEntityMapper extends BaseMapper
 				}
 
 				// set value
+				if (!method_exists($entity, $setterName)) {
+					throw new MethodNotExistsException(sprintf('Method %s not found in object %s', $setterName, get_class($entity)));
+				}
+				
 				Callback::invokeArgs(array($entity, $setterName), [$value]);
 			}
 		}

@@ -143,7 +143,7 @@ class ArrayAccessEntityMapper extends BaseMapper
 				}
 
 				// if empty ? set NULL
-				if (empty ($value) && $value !== FALSE && $value !== 0) {
+				if (empty ($value) && $value !== FALSE && !is_numeric($value)) {
 					$value = NULL;
 				}
 

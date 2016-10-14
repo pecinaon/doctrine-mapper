@@ -10,6 +10,7 @@ use Kdyby\Doctrine\MissingClassException;
 use Nette\Reflection\ClassType;
 use Nette\Utils\Callback;
 use DoctrineMapper\Exception\MapperException;
+use Traversable;
 
 /**
  * Simple service to mapping ArrayHash values (Form result) to entity
@@ -39,7 +40,7 @@ class ArrayAccessEntityMapper extends BaseMapper
 			throw new MapperException(sprintf("Entity have to be object, %s given", gettype($entity)));
 		}
 
-		if ($values instanceof ArrayAccess) {
+		if ($values instanceof ArrayAccess || $values instanceof Traversable || is_array($values)) {
 			$values = $this->convertToArray($values);
 		}
 

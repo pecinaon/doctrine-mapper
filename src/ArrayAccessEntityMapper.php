@@ -71,7 +71,7 @@ class ArrayAccessEntityMapper extends BaseMapper
 					$type = $metaData->getTypeOfField($targetProperty);
 					if ($value !== NULL && $value !== '') {
 						if (strrpos($type, 'date') !== FALSE) {
-							$value = $this->dateParser->parseDateTime($value);
+							$value = $value instanceof \DateTime ? $value : $this->dateParser->parseDateTime($value);
 						} else if ($type === 'integer') {
 							$value = (int) $value;
 						} else if ($type === 'boolean') {

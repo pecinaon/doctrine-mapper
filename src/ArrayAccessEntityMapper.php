@@ -166,12 +166,12 @@ class ArrayAccessEntityMapper extends BaseMapper
 	 * @param ArrayAccess $arrayAccess
 	 * @return array
 	 */
-	private function convertToArray(ArrayAccess $arrayAccess)
+	private function convertToArray($arrayAccess)
 	{
 		$values = (array) $arrayAccess;
 
 		foreach ($values as $key => $value) {
-			if ($value instanceof ArrayAccess) {
+			if ($value instanceof ArrayAccess || $value instanceof Traversable || is_array($value)) {
 				$values[$key] = $this->convertToArray($value);
 			}
 		}

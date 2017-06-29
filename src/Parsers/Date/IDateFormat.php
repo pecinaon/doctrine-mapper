@@ -16,12 +16,12 @@ interface IDateFormat
 	 *
 	 * @return string
 	 */
-	public function getDateTimeFormat();
+	public function getDateTimeFormat() : ?string;
 
 	/**
 	 * Return date format
 	 *
 	 * @return string
 	 */
-	public function getDateFormat();
+	public function getDateFormat() : ?string;
 }

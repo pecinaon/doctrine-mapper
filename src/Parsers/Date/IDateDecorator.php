@@ -17,5 +17,5 @@ interface IDateDecorator
 	 * @param DateTime $dateTime
 	 * @return DateTime
 	 */
-	public function decorate(DateTime $dateTime);
+	public function decorate(DateTime $dateTime) : ?DateTime;
 }

@@ -1,8 +1,8 @@
 <?php
 namespace DoctrineMapper;
 
-use Nette\Utils\ArrayHash;
 use DoctrineMapper\Exception\MapperException;
+use Traversable;
 
 /**
  * Simple service to mapping ArrayHash values (Form result) to entity
@@ -12,9 +12,7 @@ use DoctrineMapper\Exception\MapperException;
  */
 class FormEntityMapper
 {
-	/**
-	 * @var ArrayAccessEntityMapper
-	 */
+	/** @var ArrayAccessEntityMapper */
 	private $arrayAccessEntityMapper;
 
 	/**
@@ -29,7 +27,7 @@ class FormEntityMapper
 	/**
 	 * Dynamically map values to entity
 	 *
-	 * @param ArrayHash $values
+	 * @param Traversable $values
 	 * @param object $entity
 	 * @param array $columns
 	 * @return Object $entity
@@ -39,7 +37,7 @@ class FormEntityMapper
 	 *
 	 * @throws MapperException
 	 */
-	public function setValuesToEntity(ArrayHash $values, $entity, array $columns = array())
+	public function setValuesToEntity($values, $entity, array $columns = array())
 	{
 		return $this->arrayAccessEntityMapper->setToEntity($values, $entity, $columns);
 	}

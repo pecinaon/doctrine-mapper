@@ -1,7 +1,6 @@
 <?php
 namespace DoctrineMapper\Parsers\Date;
 
-
 /**
  * Interface specified overriding date and time format
  *
@@ -16,7 +15,7 @@ class SimpleDateFormat implements IDateFormat
 	/**
 	 * @return string
 	 */
-	public function getDateTimeFormat()
+	public function getDateTimeFormat() : string
 	{
 		return self::DATE_TIME_FORMAT;
 	}
@@ -24,7 +23,7 @@ class SimpleDateFormat implements IDateFormat
 	/**
 	 * @return string
 	 */
-	public function getDateFormat()
+	public function getDateFormat() : string
 	{
 		return self::DATE_FORMAT;
 	}

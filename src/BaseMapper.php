@@ -1,10 +1,12 @@
 <?php
 namespace DoctrineMapper;
 
+use ArrayAccess;
 use Doctrine\Common\Util\ClassUtils;
 use Kdyby\Doctrine\EntityManager;
 use DoctrineMapper\Parsers\Date\DateParser;
 use Nette\Utils\Callback;
+use Traversable;
 
 /**
  * Base entity mapper
@@ -14,14 +16,10 @@ use Nette\Utils\Callback;
  */
 abstract class BaseMapper
 {
-	/**
-	 * @var EntityManager
-	 */
+	/** @var EntityManager */
 	protected $entityManager;
 
-	/**
-	 * @var DateParser
-	 */
+	/** @var DateParser */
 	protected $dateParser;
 
 	/**
@@ -40,9 +38,10 @@ abstract class BaseMapper
 	 *
 	 * @param object|string $entity
 	 * @return string
+	 *
 	 * @throws \Doctrine\ORM\Mapping\MappingException
 	 */
-	protected function getEntityPrimaryKeyName($entity)
+	protected function getEntityPrimaryKeyName($entity) : ?string
 	{
 		if(is_object($entity)) {
 			$entity = ClassUtils::getClass($entity);
@@ -53,12 +52,12 @@ abstract class BaseMapper
 	}
 
 	/**
-	 * Check object status is enity
+	 * Check object status is entity
 	 *
 	 * @param object|string $entity
 	 * @return bool
 	 */
-	protected function isEntity($entity)
+	protected function isEntity($entity) : bool
 	{
 		if(is_object($entity)) {
 			$entity = ClassUtils::getClass($entity);
@@ -68,13 +67,24 @@ abstract class BaseMapper
 	}
 
 	/**
+	 * Check is value iterable
+	 *
+	 * @param $values
+	 * @return bool
+	 */
+	protected function isIterable($values) : bool
+	{
+		return ($values instanceof ArrayAccess || $values instanceof Traversable || is_array($values));
+	}
+
+	/**
 	 * Get throw getter
 	 *
 	 * @param string $propertyName
 	 * @param object $entity
-	 * @return null
+	 * @return NULL|mixed
 	 */
-	protected function invokeGetter($propertyName, $entity)
+	protected function invokeGetter(string $propertyName, $entity) : ?mixed
 	{
 		$getterName = ['get' . ucfirst($propertyName), 'is' . ucfirst($propertyName)];
 

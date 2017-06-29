@@ -2,6 +2,7 @@
 namespace DoctrineMapper;
 
 use Doctrine\ORM\PersistentCollection;
+use DoctrineMapper\Exception\InvalidStateException;
 use Nette\ComponentModel\Component;
 use Nette\Forms\Container;
 use Nette\Forms\Controls\BaseControl;
@@ -34,8 +35,10 @@ class EntityFormMapper extends BaseMapper
 	 *
 	 * @param object $entity
 	 * @param Component $component
+	 *
+	 * @throws InvalidStateException
 	 */
-	public function mapValueToComponent($entity, Component $component)
+	public function mapValueToComponent($entity, Component $component) : void
 	{
 		/** @noinspection PhpParamsInspection */
 		$value = $this->getEntityValue($entity, $component);
@@ -52,16 +55,19 @@ class EntityFormMapper extends BaseMapper
 				if ($component instanceof Container) {
 					$this->setEntityToContainer($value, $component);
 				}
-				else {
+				else if ($component instanceof BaseControl) {
 					// try to find PK
 					$pkName = $this->getEntityPrimaryKeyName($value);
 					// invoke method and set value
 					$component->setDefaultValue($this->invokeGetter($pkName, $value));
+				} else {
+					throw new InvalidStateException(sprintf('Invalid type for map values!', get_class($component)));
 				}
 
 				// no default function scope
 				return;
 			}
+
 			// if is DateTime object
 			else if(get_class($value) === 'DateTime')
 			{
@@ -99,9 +105,9 @@ class EntityFormMapper extends BaseMapper
 	 *
 	 * @param object $entity
 	 * @param Component $control
-	 * @return NULL|string
+	 * @return NULL|mixed
 	 */
-	private function getEntityValue($entity, Component $control)
+	private function getEntityValue($entity, Component $control) : ?mixed
 	{
 		return $this->invokeGetter($control->getName(), $entity);
 	}

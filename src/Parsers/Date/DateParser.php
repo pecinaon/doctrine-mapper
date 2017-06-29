@@ -20,6 +20,7 @@ class DateParser
 
 	/**
 	 * DateParser constructor.
+	 *
 	 * @param IDateFormat $dateFormat
 	 * @param IDateDecorator $decorator
 	 */
@@ -34,10 +35,12 @@ class DateParser
 	 *
 	 * @param string $date
 	 * @param bool|FALSE $toDate
-	 * @return \DateTime
+	 * @return DateTime
+	 *
 	 * @throws CantParseException
 	 */
-	public function parseDateTime($date, $toDate = FALSE) {
+	public function parseDateTime(string $date, bool $toDate = FALSE) : ?DateTime
+	{
 		$value = DateTime::createFromFormat($this->dateFormat->getDateTimeFormat(), $date);
 
 		// if not, try without time
@@ -67,9 +70,10 @@ class DateParser
 	 *
 	 * @param DateTime $dateTime
 	 * @return string
+	 *
 	 * @throws CantParseException
 	 */
-	public function parseString(DateTime $dateTime)
+	public function parseString(DateTime $dateTime) : ?string
 	{
 		if ($dateTime === NULL || get_class($dateTime) !== "DateTime") {
 			throw new CantParseException("Bad object or NULL given.");

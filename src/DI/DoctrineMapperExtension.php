@@ -4,8 +4,6 @@ namespace DoctrineMapper\DI;
 use DoctrineMapper\Exception\UnexpectedValueException;
 use Kdyby;
 use Nette;
-use Nette\PhpGenerator as Code;
-use Nette\DI\Config;
 
 /**
  * Extension for mapping entities to Nette Form and Nette Form to Doctrine Entity

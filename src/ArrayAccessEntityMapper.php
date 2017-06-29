@@ -5,12 +5,12 @@ use ArrayAccess;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\ORM\EntityRepository;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use DoctrineMapper\Exception\InvalidStateException;
 use DoctrineMapper\Exception\MethodNotExistsException;
 use Kdyby\Doctrine\MissingClassException;
 use Nette\Reflection\ClassType;
 use Nette\Utils\Callback;
 use DoctrineMapper\Exception\MapperException;
-use Traversable;
 
 /**
  * Simple service to mapping ArrayHash values (Form result) to entity
@@ -34,13 +34,13 @@ class ArrayAccessEntityMapper extends BaseMapper
 	 * @throws MapperException
 	 * @throws \Doctrine\ORM\Mapping\MappingException
 	 */
-	public function setToEntity($values, $entity, array $columns = array(), array $columnsMapping = array())
+	public function setToEntity($values, $entity, array $columns = [], array $columnsMapping = [])
 	{
 		if (!is_object($entity)) {
 			throw new MapperException(sprintf("Entity have to be object, %s given", gettype($entity)));
 		}
 
-		if ($values instanceof ArrayAccess || $values instanceof Traversable || is_array($values)) {
+		if ($this->isIterable($values)) {
 			$values = $this->convertToArray($values);
 		}
 
@@ -166,12 +166,12 @@ class ArrayAccessEntityMapper extends BaseMapper
 	 * @param ArrayAccess $arrayAccess
 	 * @return array
 	 */
-	private function convertToArray($arrayAccess)
+	private function convertToArray($arrayAccess) : array
 	{
 		$values = (array) $arrayAccess;
 
 		foreach ($values as $key => $value) {
-			if ($value instanceof ArrayAccess || $value instanceof Traversable || is_array($value)) {
+			if ($this->isIterable($value)) {
 				$values[$key] = $this->convertToArray($value);
 			}
 		}
@@ -187,7 +187,7 @@ class ArrayAccessEntityMapper extends BaseMapper
 	 * @return EntityRepository|NULL
 	 * @throws MapperException
 	 */
-	private function findRepository($className, $entity)
+	private function findRepository(string $className, $entity) : ?EntityRepository
 	{
 		$repository = NULL;
 		$existingClass = $this->findEntityWholeName($className, $entity);
@@ -211,11 +211,11 @@ class ArrayAccessEntityMapper extends BaseMapper
 	/**
 	 * Try to find entity class in possible NS
 	 *
-	 * @param class $className
+	 * @param string $className
 	 * @param object $entity
 	 * @return null|string
 	 */
-	private function findEntityWholeName($className, $entity)
+	private function findEntityWholeName(string $className, $entity) : ?string
 	{
 		$existingClass = NULL;
 		// try to locate class in this namespace
@@ -248,15 +248,22 @@ class ArrayAccessEntityMapper extends BaseMapper
 	}
 
 	/**
+	 * Get mapped entity
+	 *
 	 * @param mixed $value
-	 * @param class $targetEntity
+	 * @param string $targetEntity
 	 * @param string $pk
 	 * @param EntityRepository $repository
 	 * @return Object
 	 *
-	 * @throws MapperException
+	 * @throws InvalidStateException
 	 */
-	private function getMappedEntity($value, $targetEntity, $pk, EntityRepository $repository) {
+	private function getMappedEntity($value, string $targetEntity, string $pk, EntityRepository $repository)
+	{
+		if (class_exists($targetEntity)) {
+			throw new InvalidStateException(sprintf('Missing class %s for entity creation!'));
+		}
+
 		$entity = new $targetEntity;
 
 		// exists key load

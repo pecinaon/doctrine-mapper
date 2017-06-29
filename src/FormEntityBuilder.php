@@ -6,6 +6,7 @@ use DoctrineMapper\Exception\InvalidStateException;
 use DoctrineMapper\Parsers\Date\DateParser;
 use Kdyby\Doctrine\EntityManager;
 use Nette\Application\UI\Form;
+use Nette\ComponentModel\Container;
 
 
 /**
@@ -16,20 +17,13 @@ use Nette\Application\UI\Form;
  */
 class FormEntityBuilder
 {
-
-	/**
-	 * @var EntityFormMapper
-	 */
+	/** @var EntityFormMapper  */
 	private $entityFormMapper;
 
-	/**
-	 * @var DateParser
-	 */
+	/** @var DateParser */
 	private $dateParser;
 
-	/**
-	 * @var EntityManager
-	 */
+	/** @var EntityManager */
 	private $entityManager;
 
 	/**
@@ -51,13 +45,19 @@ class FormEntityBuilder
 	 * @param object $entity
 	 * @param bool|FALSE $autoBuild
 	 * @param string $formClass
+	 *
 	 * @return FormBuilder
+	 *
 	 * @throws InvalidStateException
 	 */
-	public function getBuilder($entity, $autoBuild = FALSE, $formClass = Form::class)
+	public function getBuilder($entity, bool $autoBuild = FALSE, string $formClass = Form::class) : FormBuilder
 	{
 		if (!is_object($entity)) {
 			throw new InvalidStateException(sprintf("Required doctrine entity, %s given", gettype($entity)));
+		}
+
+		if (empty($formClass) || is_subclass_of($formClass, Container::class)) {
+			throw new InvalidStateException(sprintf("%s is not subclass of %s", $formClass, Container::class));
 		}
 
 		return new FormBuilder($this->entityFormMapper, $entity,  $this->entityManager,  $this->dateParser, $autoBuild, new $formClass);

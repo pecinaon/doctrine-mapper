@@ -1,5 +1,11 @@
 # Doctrine Mapper
 
+[![Downloads this Month](https://img.shields.io/packagist/dm/pecinaon/doctrine-mapper.svg)](https://packagist.org/packagist/pecinaon/doctrine-mapper)
+[![Latest stable](https://img.shields.io/packagist/v/pecinaon/doctrine-mapper.svg)](https://packagist.org/packagist/pecinaon/doctrine-mapper)
+
+
+
+
 Simple package of tools, witch can you help with work with nette and doctrine.
 
 Requirements

@@ -62,7 +62,7 @@ class ArrayAccessEntityMapper extends BaseMapper
 			}
 
 			$setterName = 'set' . ucfirst($targetProperty);
-			if(method_exists($entity, $setterName) && isset($values[$column])) {
+			if(method_exists($entity, $setterName) && array_key_exists($column, $values)) {
 				// load value
 				$value = $values[$column];
 

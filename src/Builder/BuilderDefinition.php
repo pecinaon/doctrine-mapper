@@ -60,7 +60,7 @@ class BuilderDefinition
 	/**
 	 * @return boolean
 	 */
-	public function isRequired()
+	public function isRequired() : bool
 	{
 		return $this->required;
 	}
@@ -69,7 +69,7 @@ class BuilderDefinition
 	 * @param boolean $required
 	 * @return $this
 	 */
-	public function setRequired($required)
+	public function setRequired(bool $required)
 	{
 		$this->required = $required;
 		return $this;
@@ -78,16 +78,16 @@ class BuilderDefinition
 	/**
 	 * @return array
 	 */
-	public function getValidationRules()
+	public function getValidationRules() : array
 	{
 		return $this->validationRules;
 	}
 
 	/**
 	 * @param array $validationRules
-	 * @return $this
+	 * @return BuilderDefinition
 	 */
-	public function setValidationRules(array $validationRules)
+	public function setValidationRules(array $validationRules) : BuilderDefinition
 	{
 		foreach ($validationRules as $row) {
 			$this->validationRules[] = $this->processValidationRulesRow($row);
@@ -105,7 +105,7 @@ class BuilderDefinition
 	 * @param array $arg
 	 * @return $this
 	 */
-	public function addValidationRule($validator, $text = NULL, $conditional = FALSE, $arg = array())
+	public function addValidationRule(string $validator, string $text = NULL, bool $conditional = FALSE, array $arg = [])
 	{
 		$this->validationRules[] = [
 			'validator'     => $validator,
@@ -125,7 +125,7 @@ class BuilderDefinition
 	/**
 	 * @return string
 	 */
-	public function getName()
+	public function getName() : string
 	{
 		return $this->name;
 	}
@@ -133,7 +133,7 @@ class BuilderDefinition
 	/**
 	 * @return string
 	 */
-	public function getComponentType()
+	public function getComponentType() : string
 	{
 		return $this->componentType;
 	}
@@ -143,7 +143,7 @@ class BuilderDefinition
 	 * @return BuilderDefinition
 	 * @throws InvalidStateException
 	 */
-	public function setComponentType($componentType)
+	public function setComponentType(string $componentType) : BuilderDefinition
 	{
 		if (!in_array($componentType, [
 			self::COMPONENT_TYPE_CONTAINER,
@@ -166,7 +166,7 @@ class BuilderDefinition
 	/**
 	 * @return string
 	 */
-	public function getPlaceholder()
+	public function getPlaceholder() : string
 	{
 		return $this->placeholder;
 	}
@@ -175,7 +175,7 @@ class BuilderDefinition
 	 * @param string $placeholder
 	 * @return BuilderDefinition
 	 */
-	public function setPlaceholder($placeholder)
+	public function setPlaceholder(string $placeholder) : BuilderDefinition
 	{
 		$this->placeholder = $placeholder;
 		return $this;
@@ -184,7 +184,7 @@ class BuilderDefinition
 	/**
 	 * @return string
 	 */
-	public function getLabel()
+	public function getLabel() : string
 	{
 		return $this->label;
 	}
@@ -193,7 +193,7 @@ class BuilderDefinition
 	 * @param string $label
 	 * @return BuilderDefinition
 	 */
-	public function setLabel($label)
+	public function setLabel(string $label) : BuilderDefinition
 	{
 		$this->label = $label;
 		return $this;
@@ -202,7 +202,7 @@ class BuilderDefinition
 	/**
 	 * @return array
 	 */
-	public function getValues()
+	public function getValues() : array
 	{
 		return $this->values;
 	}
@@ -211,25 +211,25 @@ class BuilderDefinition
 	 * @param array $values
 	 * @return BuilderDefinition
 	 */
-	public function setValues($values)
+	public function setValues(array $values) : BuilderDefinition
 	{
 		$this->values = $values;
 		return $this;
 	}
 
 	/**
-	 * @return class
+	 * @return string
 	 */
-	public function getTargetEntity()
+	public function getTargetEntity() : string
 	{
 		return $this->targetEntity;
 	}
 
 	/**
-	 * @param class $targetEntity
+	 * @param string $targetEntity
 	 * @return BuilderDefinition
 	 */
-	public function setTargetEntity($targetEntity)
+	public function setTargetEntity(string $targetEntity) : BuilderDefinition
 	{
 		$this->targetEntity = $targetEntity;
 		return $this;
@@ -238,7 +238,7 @@ class BuilderDefinition
 	/**
 	 * @return mixed
 	 */
-	public function getValue()
+	public function getValue() : ?mixed
 	{
 		return $this->value;
 	}
@@ -247,7 +247,7 @@ class BuilderDefinition
 	 * @param mixed $value
 	 * @return BuilderDefinition
 	 */
-	public function setValue($value)
+	public function setValue($value) : BuilderDefinition
 	{
 		$this->value = $value;
 		return $this;
@@ -259,7 +259,7 @@ class BuilderDefinition
 	 * @param array $row
 	 * @return array
 	 */
-	private function processValidationRulesRow(array $row)
+	private function processValidationRulesRow(array $row) : array
 	{
 		return  [
 			'validator'     => $row['validator'],

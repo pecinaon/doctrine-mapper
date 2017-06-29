@@ -9,6 +9,7 @@ use DoctrineMapper\Parsers\Date\DateParser;
 use Kdyby\Doctrine\EntityManager;
 use Kdyby\Doctrine\Mapping\ClassMetadata;
 use Nette\Application\UI\Form;
+use Nette\ComponentModel\IComponent;
 use Nette\Forms\Container;
 use Nette\Forms\Controls\BaseControl;
 use Nette\Forms\Controls\ChoiceControl;
@@ -25,34 +26,22 @@ use Nette\Utils\Callback;
  */
 class FormBuilder extends BaseMapper
 {
-	/**
-	 * @var EntityFormMapper
-	 */
+	/** @var EntityFormMapper */
 	private $entityFormMapper;
 
-	/**
-	 * @var object
-	 */
+	/** @var object */
 	private $entity;
 
-	/**
-	 * @var ClassType
-	 */
+	/** @var ClassType */
 	private $entityReflection;
 
-	/**
-	 * @var ClassMetadata
-	 */
+	/** @var \Doctrine\ORM\Mapping\ClassMetadata */
 	private $entityMetadata;
 
-	/**
-	 * @var array
-	 */
-	private $hidden = array();
+	/** @var array  */
+	private $hidden = [];
 
-	/**
-	 * @var Form
-	 */
+	/** @var Container */
 	private $form;
 
 
@@ -90,10 +79,11 @@ class FormBuilder extends BaseMapper
 	 * Add definitions for builder
 	 *
 	 * @param array $definitions
-	 * @return $this
+	 * @return FormBuilder
+	 *
 	 * @throws InvalidStateException
 	 */
-	public function addAll(array $definitions)
+	public function addAll(array $definitions) : FormBuilder
 	{
 		foreach ($definitions as $definition) {
 			$this->add($definition);
@@ -106,10 +96,10 @@ class FormBuilder extends BaseMapper
 	 * Add definition for builder
 	 *
 	 * @param array $definition
-	 * @return $this
+	 * @return FormBuilder
 	 * @throws InvalidStateException
 	 */
-	public function add($definition = array())
+	public function add(array $definition = []) : FormBuilder
 	{
 		if (!isset ($definition['propertyName'])) {
 			throw new InvalidStateException("Missing property name!");
@@ -191,9 +181,9 @@ class FormBuilder extends BaseMapper
 	 * Remove Component from form
 	 *
 	 * @param string $propertyName
-	 * @return $this
+	 * @return FormBuilder
 	 */
-	public function hide($propertyName)
+	public function hide($propertyName) : FormBuilder
 	{
 		$this->hidden[$propertyName] = TRUE;
 		return $this;
@@ -202,9 +192,9 @@ class FormBuilder extends BaseMapper
 	/**
 	 * Hide all Components
 	 *
-	 * @return $this
+	 * @return FormBuilder
 	 */
-	public function hideAll()
+	public function hideAll() : FormBuilder
 	{
 		$properties = $this->entityReflection->getProperties();
 
@@ -222,9 +212,10 @@ class FormBuilder extends BaseMapper
 	 * Form is filled you can erase it
 	 *
 	 * @param bool $erase
-	 * @return Form
+	 *
+	 * @return Container
 	 */
-	public function getForm($erase = FALSE)
+	public function getForm($erase = FALSE) : Container
 	{
 		foreach ($this->hidden as $name => $hidden) {
 			if (isset ($this->form[$name])) {
@@ -234,7 +225,7 @@ class FormBuilder extends BaseMapper
 		$form = $this->form;
 
 		if ($erase) {
-			$form->setValues(array(), TRUE);
+			$form->setDefaults([], TRUE);
 		}
 
 		return $form;
@@ -245,9 +236,10 @@ class FormBuilder extends BaseMapper
 	 *
 	 * @param string $propertyName
 	 * @return \Nette\ComponentModel\IComponent
+	 *
 	 * @throws InvalidStateException
 	 */
-	public function getFormComponent($propertyName)
+	public function getFormComponent($propertyName) : IComponent
 	{
 		if (!isset ($this->form[$propertyName])) {
 			throw new InvalidStateException(sprintf("Component with name %s does not exists.", $propertyName));
@@ -259,9 +251,9 @@ class FormBuilder extends BaseMapper
 	/**
 	 * Generate form from entity
 	 *
-	 * @return $this
+	 * @return FormBuilder
 	 */
-	private function createForm()
+	private function createForm() : FormBuilder
 	{
 		$properties = $this->entityReflection->getProperties();
 
@@ -334,13 +326,15 @@ class FormBuilder extends BaseMapper
 
 
 	/**
-	 * @param $propertyName
+	 * @param string $propertyName
 	 * @param bool|true $fillValues
-	 * @return BuilderDefinition|null
+	 *
+	 * @return BuilderDefinition|NULL
+	 *
 	 * @throws InvalidStateException
 	 * @throws \Doctrine\ORM\Mapping\MappingException
 	 */
-	private function getPropertyRule($propertyName, $fillValues = TRUE)
+	private function getPropertyRule(string $propertyName, bool $fillValues = TRUE) : ?BuilderDefinition
 	{
 		$rule = new BuilderDefinition($propertyName);
 		if($this->entityMetadata->hasField($propertyName))
@@ -409,7 +403,7 @@ class FormBuilder extends BaseMapper
 	 *
 	 * @throws InvalidStateException
 	 */
-	private function getPossibleValues($entity)
+	private function getPossibleValues($entity) : array
 	{
 		if (!class_exists($entity)) {
 			throw new InvalidStateException(sprintf('Object %s is not accessible please use better specification in targetEntity annotation!', $entity));
